@@ -1,0 +1,130 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
+#define MAX_ITEMS 20
+#define MAX_ITEM_LENGTH 100
+#define FILE_PATH "C:/path/to/test.txt"
+
+typedef struct {
+    char item[MAX_ITEM_LENGTH];
+    int priority;
+} Item;
+
+void loadItems(Item items[MAX_ITEMS], int *numItems) {
+    FILE *file = fopen(FILE_PATH, "r");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    *numItems = 0;
+    char line[MAX_ITEM_LENGTH];
+    while (*numItems < MAX_ITEMS && fgets(line, sizeof(line), file) != NULL) {
+        if (sscanf(line, "%99[^,],%d", items[*numItems].item, &items[*numItems].priority) == 2) {
+            (*numItems)++;
+        }
+    }
+
+    fclose(file);
+}
+
+void saveItems(Item items[MAX_ITEMS], int numItems) {
+    FILE *file = fopen(FILE_PATH, "w");
+    if (file == NULL) {
+        printf("Error opening file.\n");
+        return;
+    }
+
+    for (int i = 0; i < numItems; i++) {
+        fprintf(file, "%s,%d\n", items[i].item, items[i].priority);
+    }
+
+    fclose(file);
+}
+
+int main() {
+    int choice;
+    Item items[MAX_ITEMS];
+    int numItems;
+
+    printf("\n\n1) Add an item\n2) Modify an item\n3) Delete an item\n4) Display all items\n\n");
+    scanf("%d", &choice);
+    getchar();
+
+    loadItems(items, &numItems);
+
+    switch (choice) {
+        case 1: {
+            char newItem[MAX_ITEM_LENGTH];
+            int priority;
+            printf("Enter your item:\n\n");
+            fgets(newItem, MAX_ITEM_LENGTH, stdin);
+            newItem[strcspn(newItem, "\n")] = '\0';
+
+            printf("Enter the priority of your item:\n\n");
+            scanf("%d", &priority);
+            getchar();
+
+            strcpy(items[numItems].item, newItem);
+            items[numItems].priority = priority;
+            numItems++;
+            saveItems(items, numItems);
+            break;
+        }
+
+        case 2: {
+            int modifyItem;
+            printf("Enter the item to modify:\n\n");
+            for (int i = 0; i < numItems; i++) {
+                printf("%d) %s, Priority:%d\n", i + 1, items[i].item, items[i].priority);
+            }
+            printf("\n");
+            scanf("%d", &modifyItem);
+            getchar();
+
+            if (modifyItem > 0 && modifyItem <= numItems) {
+                printf("Enter your new item:\n\n");
+                fgets(items[modifyItem - 1].item, MAX_ITEM_LENGTH, stdin);
+                items[modifyItem - 1].item[strcspn(items[modifyItem - 1].item, "\n")] = '\0';
+                saveItems(items, numItems);
+            }
+            break;
+        }
+
+        case 3: {
+            int deleteItem;
+            printf("Enter the item to delete:\n\n");
+            for (int i = 0; i < numItems; i++) {
+                printf("%d) %s, Priority:%d\n", i + 1, items[i].item, items[i].priority);
+            }
+            printf("\n");
+            scanf("%d", &deleteItem);
+            getchar();
+
+            if (deleteItem > 0 && deleteItem <= numItems) {
+                for (int i = deleteItem - 1; i < numItems - 1; i++) {
+                    strcpy(items[i].item, items[i + 1].item);
+                    items[i].priority = items[i + 1].priority;
+                }
+                numItems--;
+                saveItems(items, numItems);
+            }
+            break;
+        }
+
+        case 4: {
+            printf("Saved items:\n\n");
+            for (int i = 0; i < numItems; i++) {
+                printf("%d) %s, Priority:%d\n", i + 1, items[i].item, items[i].priority);
+            }
+            printf("\n");
+            break;
+        }
+
+        default:
+            printf("Invalid choice\n\n");
+    }
+
+    return 0;
+}
